@@ -4,25 +4,27 @@ import Content from './Content';
 import Footer from './Footer';
 import { useState } from 'react';
 import AddItem from './AddItem';
+import SearchItem from './SearchItem';
 
 function App() {
-  const [items, setItems] = useState([
-    {
-      item: "Apple",
-      id: 1,
-      checked: false,
-    },
-    {
-      item: "Banana",
-      id: 2,
-      checked: false,
-    },
-    {
-      item: "Cereal",
-      id: 3,
-      checked: false,
-    },
-  ]);
+  const [items, setItems] = useState( JSON.parse(localStorage.getItem("items")) || [] );
+
+  const setAndSaveItems = (newItems) => {
+    setItems(newItems);
+    localStorage.setItem("items", JSON.stringify(newItems));
+  }
+
+  const [newItem, setNewItem] = useState("");
+  const [search, setSearch] = useState("");
+
+  const addItem = (item) => {
+    const id = items.length ? items[items.length - 1].id + 1 : 1;
+    const myNewItem={item,id,checked:false};
+    const listItems=[...items,myNewItem];
+    setAndSaveItems(listItems);
+
+  };
+
   const handleCheck = (id) => {
     const updatedItems = items.map((item) => {
       if (item.id === id) {
@@ -36,17 +38,34 @@ function App() {
 
   const handleDelete = (id) => {
     const listItems = items.filter((item) => item.id !== id);
-    setItems(listItems);
-    localStorage.setItem("items", JSON.stringify(listItems));
+    setAndSaveItems(listItems);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if(!newItem.trim()) return;
+    addItem(newItem);
+    setNewItem("");
+    
   };
   
 
   return (
     <div className="App">
       <Header title="Samaannnn" />
-      <AddItem />
+      
+      <AddItem 
+        newItem={newItem} 
+        setNewItem={setNewItem} 
+        handleSubmit={handleSubmit}
+
+      />
+      <SearchItem 
+        search={search} 
+        setSearch={setSearch}
+      />
       <Content 
-        items={items} 
+        items={items.filter(item=> ((item.item).toLowerCase()).includes(search.toLowerCase()))}    
         handleCheck={handleCheck}
         handleDelete={handleDelete}
         
