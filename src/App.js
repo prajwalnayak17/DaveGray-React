@@ -2,20 +2,49 @@
 import Header from './Header';
 import Content from './Content';
 import Footer from './Footer';
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import AddItem from './AddItem';
 import SearchItem from './SearchItem';
 
+
 function App() {
-  const [items, setItems] = useState( JSON.parse(localStorage.getItem("items")) || [] );
+  const API_URL = "http://localhost:3500/items";
+  const [items, setItems] = useState([]);
+  const [newItem, setNewItem] = useState("");
+  const [search, setSearch] = useState("");
+  const [fetchError, setFetchError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const setAndSaveItems = (newItems) => {
     setItems(newItems);
-    localStorage.setItem("items", JSON.stringify(newItems));
   }
 
-  const [newItem, setNewItem] = useState("");
-  const [search, setSearch] = useState("");
+  useEffect(() => {
+    const fetchItems=async()=>{
+      try{
+        const response = await fetch(API_URL);
+        if(!response.ok) throw Error("did not receince expexted");
+        const listItems = await response.json();
+        console.log(listItems);
+        setItems(listItems);
+        setFetchError(null);
+      }
+      catch(err){
+
+        setFetchError(err.message);
+      }finally{
+        setIsLoading(false);
+      }
+    }
+    setTimeout(() => {
+      (async()=>await fetchItems())();  
+    },2000  
+    )
+
+    
+  }, []);
+
+  
 
   const addItem = (item) => {
     const id = items.length ? items[items.length - 1].id + 1 : 1;
@@ -64,12 +93,19 @@ function App() {
         search={search} 
         setSearch={setSearch}
       />
-      <Content 
+      <main>  
+        {isLoading && <p>Loading...</p>}
+        {fetchError && <p style={{color:"red"}} >{`Error: ${fetchError}`}</p>}
+
+      
+      {!fetchError && !isLoading && <Content 
         items={items.filter(item=> ((item.item).toLowerCase()).includes(search.toLowerCase()))}    
         handleCheck={handleCheck}
         handleDelete={handleDelete}
         
       />
+  }
+      </main>
       <Footer length={items.length} />
     </div>
   );
